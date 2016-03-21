@@ -1,3 +1,2 @@
-[[Endpoint]]
-Host = "localhost"
-Port = "9000"
+Address = "localhost"
+Port = 9000
