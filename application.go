@@ -18,7 +18,7 @@ func AppRead(data []byte) AppLayer_t{
 
 }
 
-func ApplicationResponse()[]byte{
+func ApplicationResponse(){
 
 
 }
