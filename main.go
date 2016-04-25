@@ -7,6 +7,7 @@ import(
 	"os"	
 	"flag"
 	"strconv"
+	"encoding/binary"
 	
 	"github.com/Senior-Design-May1601/Splunk/alert"
 	"github.com/Senior-Design-May1601/projectmain/logger"
@@ -32,25 +33,30 @@ func handler(c net.Conn,mylogger *log.Logger){
 
 	remoteAddr := c.RemoteAddr()
 	localAddr := c.LocalAddr()
+	 
+	io.Copy(&buf, c)
 
-	for{
-		io.Copy(&buf, c)
-		fileLog.Println("all data", buf)
+	if binary.Size(buf.Bytes) >=12{
 		resp,dl :=DataLinkRead(buf.Bytes()) // Strip DataLink header
 		resp,final:= TransportRead(resp) //Strip Transport header
 		ap,aFinal:=AppRead(resp) //Strip Application header	
 		fileLog.Println("finalApp",aFinal)
 		fileLog.Println("finalT",final)	
-	
+		
+			
 
 		str := makeAlert(dl,ap,remoteAddr,localAddr)
 		fileLog.Println(str)
 		mylogger.Println(str)
-
-		
-		buf.Reset()	
 	}
-
+			
+	n, err := c.Write(G120v1())
+	fileLog.Println("writing",n)
+	if err != nil {
+		fileLog.Println("write error: ", err)
+	}
+		
+	buf.Reset()
 }
 func makeAlert(dl DataLayer_t, app AppLayer_t, remoteAddr net.Addr,localAddr net.Addr) string{
 	meta := make(map[string]string)

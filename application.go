@@ -1,6 +1,7 @@
 package main
 import(
 	"fmt"
+	"crypto/rand"	
 )
 type AppLayer_t struct {
 	function_code string
@@ -21,34 +22,35 @@ func AppRead(data []byte) (AppLayer_t,int){
 
 }
 
-func ApplicationResponse(){
+func AppResponseHeader()[]byte{
+	header := make([]byte,0,7)
+	header[0] = 0xC0 //FIN, FIR bit 
+	header[1] = 0x83 // Authenticate Response 3.1.2
+	header[2] = 0x00
+	header[3] = 0x00
+	header[4] = 120 //group number
+	header[5] = 1 //variation
+	header[6] = 0x06 //no prefix no range qualifier
 
 
+	return header
 }
 
-func makeG120()[]byte {
- 	var object []byte
-	object[0] = 120 //group number
-	object[1] = 1 // variation
-	object[2] = 0 // no prefix
-	
-	//begin arbitrary sequence num
-	object[3] = 34
-	object[4] = 3
-	object[5] = 100
-	object[6] = 64
-	//end sequenc num
-	
-	object[7] = 0 //usr number unknown because outstation
-	object[8] = 1 // sha-1  4 bytes
-	object[9] = 1 // reason for challenge = Critical adsu
+func G120v1()[]byte {
+ 	buf := make([]byte,19)
+	rand.Read(buf)
 
-	//begin challenge data 4 bytes sha-1 could make these random
-	object[10] = 0xFE
-	object[11] = 0x00
-	object[12] = 0x33
-	object[13] = 0xAB
-	//end challenge	
-	return object
+	buf[0] = 0xC0 //FIN, FIR bit 
+	buf[1] = 0x83 // Authenticate Response 3.1.2
+	buf[2] = 0x00
+	buf[3] = 0x00
+	buf[4] = 120 //group number
+	buf[5] = 1 //variation
+	buf[6] = 0x06 //no prefix no range qualifier
+	buf[13] = 0x04 //Hmac Sha-256 16 bit
+	buf[14] = 0x01 // Reason for challenge-> Critical
+	
+	return buf	
+
 }
 
