@@ -36,19 +36,42 @@ func AppResponseHeader()[]byte{
 	return header
 }
 
-func G120v1()[]byte {
- 	buf := make([]byte,19)
-	rand.Read(buf)
+func G120v1(remote string,local string)[]byte {
+ 	buf := make([]byte,29)
+	r := []byte(remote)
+	l := []byte(local)
+	rand.Read(buf) //fill buffer with random bytes
 
-	buf[0] = 0xC0 //FIN, FIR bit 
-	buf[1] = 0x83 // Authenticate Response 3.1.2
-	buf[2] = 0x00
-	buf[3] = 0x00
-	buf[4] = 120 //group number
-	buf[5] = 1 //variation
-	buf[6] = 0x06 //no prefix no range qualifier
-	buf[13] = 0x04 //Hmac Sha-256 16 bit
-	buf[14] = 0x01 // Reason for challenge-> Critical
+	buf[0] = 0x05 //Preamble [0],[1]
+	buf[1] = 0x64
+	buf[2] = 28 // lenght
+	buf[3] = 0x00 //ACK
+	buf[4] = l[0] // local addr[0],[1]
+	buf[5] = l[1]
+	buf[6] = r[0] //remote addr[0],[1]
+	buf[7] = r[1]
+	// 8 & 9 are CRC bits
+
+	//begin transport header
+	buf[10] = 0xC1 //FIN, FIR bit Transport layer
+
+	// Begin app header
+	buf[11] = 0xC0 //FIN, FIR bit 
+	buf[12] = 0x83 // Authenticate Response 3.1.2
+	buf[13] = 0x00
+	buf[14] = 0x00
+
+	// Begin Object header
+	buf[15] = 120 //group number
+	buf[16] = 1 //variation
+	buf[17] = 0x06 //no prefix no range qualifier
+
+	// 18:21 UINT32 Challenge Sequence number
+	// 22:23 UINT16 User number for session keys
+	buf[24] = 0x04 //Hmac Sha-256 16 bit
+	buf[25] = 0x01 // Reason for challenge-> Critical
+
+	//4 extra bytes for challenge
 	
 	return buf	
 

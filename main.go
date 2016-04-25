@@ -36,7 +36,7 @@ func handler(c net.Conn,mylogger *log.Logger){
 	 
 	io.Copy(&buf, c)
 
-	if binary.Size(buf.Bytes) >=12{
+	if binary.Size(buf.Bytes()) >=12{
 		resp,dl :=DataLinkRead(buf.Bytes()) // Strip DataLink header
 		resp,final:= TransportRead(resp) //Strip Transport header
 		ap,aFinal:=AppRead(resp) //Strip Application header	
@@ -50,7 +50,7 @@ func handler(c net.Conn,mylogger *log.Logger){
 		mylogger.Println(str)
 	}
 			
-	n, err := c.Write(G120v1())
+	n, err := c.Write(G120v1(remoteAddr.String(),localAddr.String()))
 	fileLog.Println("writing",n)
 	if err != nil {
 		fileLog.Println("write error: ", err)
