@@ -6,15 +6,18 @@ type AppLayer_t struct {
 	function_code string
 }
 
-func AppRead(data []byte) AppLayer_t{
+func AppRead(data []byte) (AppLayer_t,int){
 	var func_code string
+	control := data[0]
+	final:= control & 0x80 >> 7
+
 	if val, ok := f_codes[data[1]]; ok {
 		func_code = val
 	}else{
 		func_code = fmt.Sprintf("Reserverd code %x",data[1])
 	}
 
-	return AppLayer_t{func_code}
+	return AppLayer_t{func_code}, int(final)
 
 }
 

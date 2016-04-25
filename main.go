@@ -18,38 +18,39 @@ type Config struct {
 	Port int
 }
 
-
 func handler(c net.Conn,mylogger *log.Logger){
-	var buf bytes.Buffer
-	io.Copy(&buf, c)
 	defer c.Close()
 
-//Connection Data
+	var buf bytes.Buffer
+
+	fileLog := logger.NewLogger("",0)
+	f, _ := os.OpenFile("dnp-log-file",  os.O_RDWR | os.O_CREATE | os.O_APPEND, 0666)	
+	fileLog.SetOutput(f)
+	defer f.Close()
+
+
+
 	remoteAddr := c.RemoteAddr()
 	localAddr := c.LocalAddr()
 
-//If incorrect preamble send unknown alert
-/*	if buf[0] != 0x05 && buf[1] != 0x64{
-		makeUnknownAlert(remoteAddr,localAddr)
-	}*/
-
-
- // Just a logger
-	fileLog := logger.NewLogger("",0)
-
-	f, _ := os.OpenFile("dnp-log-file",  os.O_RDWR | os.O_CREATE | os.O_APPEND, 0666)	
-	defer f.Close()
-	fileLog.SetOutput(f)
+	for{
+		io.Copy(&buf, c)
+		fileLog.Println("all data", buf)
+		resp,dl :=DataLinkRead(buf.Bytes()) // Strip DataLink header
+		resp,final:= TransportRead(resp) //Strip Transport header
+		ap,aFinal:=AppRead(resp) //Strip Application header	
+		fileLog.Println("finalApp",aFinal)
+		fileLog.Println("finalT",final)	
 	
 
-	resp,dl :=DataLinkRead(buf.Bytes()) // Strip DataLink header
-	resp = TransportRead(resp) //Strip Transport header
-	ap:=AppRead(resp) //Strip Application header
+		str := makeAlert(dl,ap,remoteAddr,localAddr)
+		fileLog.Println(str)
+		mylogger.Println(str)
 
-	str := makeAlert(dl,ap,remoteAddr,localAddr)
-	fileLog.Println(str)
-	mylogger.Println(str)
-	
+		
+		buf.Reset()	
+	}
+
 }
 func makeAlert(dl DataLayer_t, app AppLayer_t, remoteAddr net.Addr,localAddr net.Addr) string{
 	meta := make(map[string]string)
@@ -75,6 +76,7 @@ var config Config
 
 func main(){
 	mylogger := logger.NewLogger("",0)	
+
 	configPath := flag.String("config","","config file")
 	flag.Parse()
 

@@ -7,6 +7,9 @@
 */
 package main
 
-func TransportRead(data []byte)([]byte){
-	return data[1:]
+func TransportRead(data []byte)([]byte,int){
+	header := data[0]
+	final := header & 0x80 >> 7
+
+	return data[1:],int(final)
 }
